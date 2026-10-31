@@ -1,0 +1,126 @@
+---
+title: "Deliverable 3"
+author: "Jackson Geist"
+date: "2026-10-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+```
+
+
+# Data Dictionary
+```{r}
+data_stats <- read_excel("C:/Users/Mashe/OneDrive - Florida Polytechnic University/Data anytics/data_stats.xlsx")
+View(data_stats)
+```
+
+# Variables
+Company = The overall company of the park (all disney), categorical
+
+Incident_date	= The specific calendar date on which the incident took place.	Categorical
+
+Ride_name	= The specific name of the attraction or ride involved in the incident.	Categorical
+
+Theme_Park = 	The specific sub-park or theme park where the ride is located.	Categorical
+
+age = 	The age (in years) of the guest involved in the incident.	Numerical (Discrete)
+
+gender = 	The biological sex or gender marker of the guest.	Categorical
+
+description	= Text details outlining the guest's symptoms, injuries, or the nature of the incident.	Categorical (Text)
+
+
+# 2
+```{r}
+## Graph 1
+# Histogram of every age and their respective frequency of incidents from the year 2002-2022
+ggplot(data_stats, aes(x = age)) +
+  # bin width = 1 ensures every single age year gets its own individual bar
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white", alpha = 0.9) +
+  labs(
+    title = "Frequency of Incidents by Age",
+    subtitle = "Count of how many times each specific age appears in the dataset",
+    x = "Age (Years)",
+    y = "Frequency (Count)"
+  ) +
+  # tick marks on the X-axis every 10 years
+  scale_x_continuous(breaks = seq(0, 100, by = 10)) + 
+  theme_minimal()
+
+# Graph 1's data is left skewed, meaning that the majority of incidents were among the older demographic of people. It is pretty stable throughout the children and then there starts to be a rise around 40 and peaks at 69-70. 
+
+#------------------------------------------------------------------------------------------------------
+
+##Graph 2
+# Line and point graph for the number of incidents for each year to see if there is a trend in history. 
+df_clean <- data_stats %>%
+  mutate(Incident_date = as.Date(Incident_date))
+
+# Group incidents by month for a clean trend line
+df_timeline <- df_clean %>%
+  mutate(Month_Year = floor_date(Incident_date, "year")) %>%
+  count(Month_Year)
+
+# Plot the timeline trend
+ggplot(df_timeline, aes(x = Month_Year, y = n)) +
+  geom_line(color = "darkred", linewidth = 2) +
+  geom_point(color = "darkred", size = 3) +
+  labs(
+    title = "Theme Park Incidents Over Time",
+    subtitle = "Monthly aggregation of reported incidents",
+    x = "Timeline",
+    y = "Number of Incidents"
+  ) +
+  # writes each year on the x axis
+  scale_x_date(date_labels = "%Y", date_breaks = "1 year") +
+  theme_minimal() +
+  # writes the years at a 45 degree angle for better fit
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#There are a few outliers in this graph the biggest being 2020, this is likely caused by the pandemic which forced Disney to close down for a period of time, meaning there were no guests to have incidents. But the lowest year was 2002 with less than 5 incidents which is unusual. Whereas the peak was in 2014 with 45 incidents. Overall the graph trends upwards until 2020 and then starts the positive trend again.
+
+#--------------------------------------------------------------------------------------------------------
+
+##Graph 3
+# Bar graph for the number of incidents per park from 2002-2022
+ggplot(data_stats, aes(x = fct_infreq(Theme_Park), fill = Theme_Park)) +
+  geom_bar(color = "black", alpha = 0.8) +
+  labs(
+    title = "Total Number of Incidents by Theme Park",
+    subtitle = "Sorted from highest to lowest frequency",
+    x = "Theme Park / Company",
+    y = "Number of Incidents"
+  ) +
+  scale_y_continuous(breaks = seq(0, 200, by = 25)) +
+  theme_minimal() +
+  # writes the X-axis labels to 45 degrees so long theme park names don't overlap
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none" # Hides the legend since colors match the X-axis labels
+  )
+
+#This graph shows how each park respectively had incidents in comparison to one another. Magic kingdom is by far the leader with roughly double than that of the next most, being Animal Kingdom. Magic Kingdom was a clear outline here, most likely because it has the most visitors out of all of the parks, so more people equals more people able to have an incident. 
+```
+
+
+# 3
+```{r}
+dim(data_stats)
+
+```
+
+# 4
+I had to clean up the data in excel a little bit, mainly by splitting the age and gender column into 2 seperate respective columns. I also made sure all of the ride names were the exact same, some had & and some had the word so this makes sure i get every single data value when i need it. There were no null cells. I got rid of all the data for Universal and I am solely looking at disney incidents. Most all of the data is straightforward, except the incident info column, there are really no repeats there and all the text is specific to that one incident. 
+
+
+# 5 
+The preliminary exploration of this theme park incident dataset reveals several striking patterns regarding guest safety, demographic risk factors, and institutional logging practices. Most notably, the heavily left-skewed age distribution suggests that older adults are disproportionately represented in medical incident logs. While one might initially expect a dataset about theme park attractions to heavily feature children or teenagers due to ride popularity, the data demonstrates that individuals aged 55 to 75 form the core risk cluster. This finding implies that the mechanical stresses of high-velocity or high-G attractions interact aggressively with the physical vulnerabilities or pre-existing conditions of an aging demographic. Furthermore, isolating individual nodes like Avatar Flight of Passage inside the Animal Kingdom reveals that a tiny subset of modern, high-intensity motion simulation rides accounts for a significant chunk of all logged medical occurrences. The fact that a single ride can command over 10% of a multi-year dataset highlights a critical focal point for operational safety teams.
+While these patterns are interesting, the dataset has some noticeable limitations that raise concerns. The text descriptions of the injuries are written in free-form language rather than standardized medical codes, which creates inconsistent phrasing for similar symptoms and makes the data harder to analyze accurately. Additionally, because we only have records for guests who got hurt, we lack a baseline of total park attendance to calculate actual safety percentages or true risk rates. Moving forward, my next step will be to look at two variables at once, such as comparing age groups against specific rides, and to use text analysis to pull out the most common injury keywords from the descriptions. This will help pinpoint exactly which types of ride forces, like motion screens or high speeds, pose the greatest risks to specific age groups.
