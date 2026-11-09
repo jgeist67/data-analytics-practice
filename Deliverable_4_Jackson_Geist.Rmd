@@ -1,0 +1,127 @@
+---
+title: "Deliverable 4"
+author: "Jackson Geist"
+date: "2026-11-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(tidyverse)
+library(plotly)
+```
+
+```{r}
+data_stats <- read_excel("C:/Users/Mashe/OneDrive - Florida Polytechnic University/Data anytics/data_stats.xlsx")
+View(data_stats)
+```
+
+```{r}
+## Graph 1
+# Histogram of every age and their respective frequency of incidents from the year 2002-2022
+ggplot(data_stats, aes(x = age)) +
+  # bin width = 1 ensures every single age year gets its own individual bar
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white", alpha = 0.9) +
+  labs(
+    title = "Frequency of Incidents by Age",
+    subtitle = "Count of how many times each specific age appears in the dataset",
+    x = "Age (Years)",
+    y = "Frequency (Count)"
+  ) +
+  # tick marks on the X-axis every 10 years
+  scale_x_continuous(breaks = seq(0, 100, by = 10)) + 
+  theme_minimal()
+
+# This visualization is a detailed frequency distribution (a counted bar chart acting as a granular histogram) tracking how individual incident counts are spread across the human lifespan. It displays the precise number of times each specific age appears in your dataset, from toddlers to elderly park guests. 2 varaibles age and frequency. The graph reveals a distinctly left-skewed distribution with a massive concentration of incidents occurring in later adulthood. While there is a minor baseline of minor incidents spread evenly across childhood and early adulthood (ages 0 to 35), incidents spike dramatically after age 40. The true danger zone peaks sharply between ages 55 and 72, where multiple specific age groups cross more than 15 incidents each.The heavy concentration in older demographics strongly implies that the incidents logged are likely driven by medical complications, cardiovascular stress, or physical fragility rather than reckless behavior, which typically skews younger. Older guests are statistically more susceptible to sudden changes in physical equilibrium, heat exhaustion, and motion sickness.
+
+#------------------------------------------------------------------------------------------------------
+
+##Graph 2
+# Line and point graph for the number of incidents for each year to see if there is a trend in history. 
+df_clean <- data_stats %>%
+  mutate(Incident_date = as.Date(Incident_date))
+
+# Group incidents by month for a clean trend line
+df_timeline <- df_clean %>%
+  mutate(Month_Year = floor_date(Incident_date, "year")) %>%
+  count(Month_Year)
+
+# Plot the timeline trend
+ggplot(df_timeline, aes(x = Month_Year, y = n)) +
+  geom_line(color = "darkred", linewidth = 2) +
+  geom_point(color = "darkred", size = 3) +
+  labs(
+    title = "Theme Park Incidents Over Time",
+    subtitle = "Monthly aggregation of reported incidents",
+    x = "Timeline",
+    y = "Number of Incidents"
+  ) +
+  # writes each year on the x axis
+  scale_x_date(date_labels = "%Y", date_breaks = "1 year") +
+  theme_minimal() +
+  # writes the years at a 45 degree angle for better fit
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#This is a longitudinal line chart tracking the long-term historical cadence of reported incidents. It maps the operational safety and incident volatility across more than two decades, highlighting macro-level shifts and historical anomalies.2 variables incident_date and age. The data demonstrates an overall positive upward trend from 2001 to 2014, where incidents climbed from a record low of under 5 per year to an all-time historical peak of 45 incidents in 2014. Following 2014, the data exhibits volatile cyclical swings before experiencing a catastrophic drop in 2020 to under 10 incidents, followed by a immediate, sharp V-shaped recovery heading into 2022.The steady rise up to 2014 can likely be explained by two external factors: expanding resort attendance capacity and stricter corporate or state reporting mandates over time. The massive drop in 2020 is a clear external anomaly directly caused by the COVID-19 pandemic, during which Disney World suffered unprecedented multi-month operational closures and capacity restrictions.
+
+#--------------------------------------------------------------------------------------------------------
+
+##Graph 3
+# Bar graph for the number of incidents per park from 2002-2022
+ggplot(data_stats, aes(x = fct_infreq(Theme_Park), fill = Theme_Park)) +
+  geom_bar(color = "black", alpha = 0.8) +
+  labs(
+    title = "Total Number of Incidents by Theme Park",
+    subtitle = "Sorted from highest to lowest frequency",
+    x = "Theme Park / Company",
+    y = "Number of Incidents"
+  ) +
+  scale_y_continuous(breaks = seq(0, 200, by = 25)) +
+  theme_minimal() +
+  # writes the X-axis labels to 45 degrees so long theme park names don't overlap
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none" # Hides the legend since colors match the X-axis labels
+  )
+
+#This is a categorical bar chart displaying a macro-level comparison of incident volumes across different Disney World properties. The chart is sorted cleanly from highest to lowest frequency to establish a distinct hierarchy of risk or report volume by location. 2 variables Theme_park and number of incidents. The chart clearly indicates that Magic Kingdom is a massive statistical outlier, accounting for over 175 incidents—nearly double that of the next closest park (Animal Kingdom, which sits just under 100). The four main theme parks hold a commanding monopoly over the dataset, while the two water parks (Typhoon Lagoon and Blizzard Beach) register negligible incident counts (under 35 and 25, respectively).Magic Kingdom’s dominant bar height is almost certainly a direct reflection of its status as the most heavily visited theme park in the world, generating a much larger baseline of foot traffic. Conversely, water parks have strict dress codes, fewer high-speed mechanical constraints, and an environment where guests naturally self-regulate physical exertion, leading to far fewer severe reported logs.
+
+
+#--------------------------------------------------------------------------------------------------------
+
+## Graph 4
+# scatter plot showing the number of ride incidents vs the avergae age of the guest
+p <- data_stats %>% 
+  group_by(Ride_name) %>% 
+  summarize(
+    Incidents = n(), 
+    Avg_Age = round(mean(age, na.rm = TRUE), 1) # Rounds the age to look clean
+  ) %>% 
+  # Use 'text' inside aes() so the hover box knows what to display
+  ggplot(aes(x = Avg_Age, y = Incidents, text = paste("Ride:", Ride_name))) +
+    geom_point(size = 3, color = "steelblue", alpha = 0.7) +
+    labs(
+      title = "Ride Incidents vs. Average Guest Age", 
+      x = "Average Age (Years)", 
+      y = "Total Incidents"
+    ) +
+    theme_minimal()
+
+# 2. Turn the static plot into an interactive hover plot
+ggplotly(p, tooltip = c("text", "x", "y"))
+
+# This scatter plot visualizes the distribution of theme park incidents aggregated across specific attractions. Rather than showing a dense wall of text, the visualization features an interactive hover space where each individual data point represents a unique ride layout. The vertical height tracks the gross volume of incident logs accumulated by that attraction, while the horizontal positioning measures the mathematical center of the age demographic involved in those incidents. 2 variables: Avg_age and Incidents. Outliers like Space Mountain, Expedition Everest, and Mission: SPACE sit exceptionally high on the vertical axis (accumulating 30 to 40+ incidents) with average age metrics heavily concentrated between 45 and 55 years old.
+
+```
+
+# takeways
+I have actually learned a lot from looking into this data set. I have always enjoyed disney and theme park stuff and so this was something that i actaully wanted to look more into and enjoyed working with. I was not too suprised to see that Magic Kingdom had the highest amount of incidents among all the parks, mainly because it is their "staple" park with the most attendance. I was kinda of suprised to see the average age of incidents being around the 55 mark, because i would have thought a lot of kids would somehow find a way to get hurt. I would like to test individual parks against each other to determine if there is a common factor here or each park is different. This would help if disney could find a denominator in order to fix it. If they can fix it, then the parks would be that much safer and overall increase their revenue. I probably plan to use the first 2 graphs in my presentation and might use the last one but the first 2 should be good. I mainly want to look into and present among the average age of the incidents and the total number of incidents throughout the years. I can also talk about how the incidents per year vary across my line graph. Then i can throw in some of the most interesting incident descriptions that I found and if there are any "bad" injuries from these attractions. 
+
+
+
